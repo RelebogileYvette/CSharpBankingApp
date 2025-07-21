@@ -1,0 +1,5 @@
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.GeneratedMSBuildEditorConfig.editorconfig
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.AssemblyInfoInputs.cache
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.AssemblyInfo.cs
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.csproj.CoreCompileInputs.cache
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.sourcelink.json
