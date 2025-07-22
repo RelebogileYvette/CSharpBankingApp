@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -17,35 +16,42 @@ namespace CSharpBankingApp
     {
         [JsonPropertyName("id")]
         public string Id { get; private set; }
-        
+
         [JsonPropertyName("name")]
         public string Name { get; set; }
-        
+
         [JsonPropertyName("balance")]
         public decimal Balance { get; private set; }
-        
+
         [JsonPropertyName("transactions")]
         public List<Transaction> Transactions { get; private set; }
-        
+
         [JsonPropertyName("pin")]
         private string Pin { get; set; }
-        
+
         [JsonPropertyName("type")]
         public AccountType Type { get; private set; }
-        
+
         [JsonPropertyName("interestRate")]
         public decimal InterestRate { get; private set; }
-        
+
         [JsonPropertyName("overdraftLimit")]
         public decimal OverdraftLimit { get; private set; }
-        
+
         [JsonPropertyName("minimumBalance")]
         public decimal MinimumBalance { get; private set; }
 
         [JsonConstructor]
-        public Account(string id, string name, decimal balance, List<Transaction> transactions, 
-                       string pin, AccountType type, decimal interestRate, 
-                       decimal overdraftLimit, decimal minimumBalance)
+        public Account(
+            string id,
+            string name,
+            decimal balance,
+            List<Transaction> transactions,
+            string pin,
+            AccountType type,
+            decimal interestRate,
+            decimal overdraftLimit,
+            decimal minimumBalance)
         {
             Id = id;
             Name = name;
@@ -62,7 +68,7 @@ namespace CSharpBankingApp
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Account name cannot be empty or null", nameof(name));
-            
+
             if (!ValidatePinFormat(pin))
                 throw new ArgumentException("PIN must be exactly 4 digits", nameof(pin));
 
@@ -76,29 +82,29 @@ namespace CSharpBankingApp
         }
 
         public bool ValidatePin(string enteredPin) => Pin == enteredPin;
-        
+
         public bool ChangePin(string currentPin, string newPin)
         {
             if (!ValidatePin(currentPin)) return false;
             if (!ValidatePinFormat(newPin)) return false;
-            
+
             Pin = newPin;
             return true;
         }
-        
-        private static bool ValidatePinFormat(string pin) => 
+
+        private static bool ValidatePinFormat(string pin) =>
             !string.IsNullOrEmpty(pin) && pin.Length == 4 && pin.All(char.IsDigit);
 
         public bool ConvertAccountType(AccountType newType, string pin)
         {
             if (!ValidatePin(pin)) return false;
             if (!CanConvertTo(newType)) return false;
-            
+
             Type = newType;
             SetAccountTypeProperties(newType);
             return true;
         }
-        
+
         private bool CanConvertTo(AccountType newType) => newType switch
         {
             AccountType.Savings => true,
@@ -106,7 +112,7 @@ namespace CSharpBankingApp
             AccountType.Business => Balance >= 1000,
             _ => false
         };
-        
+
         private void SetAccountTypeProperties(AccountType type)
         {
             switch (type)
@@ -116,13 +122,13 @@ namespace CSharpBankingApp
                     OverdraftLimit = 0;
                     MinimumBalance = 0;
                     break;
-                
+
                 case AccountType.Cheque:
                     InterestRate = 0.005m;
                     OverdraftLimit = 200;
                     MinimumBalance = 100;
                     break;
-                
+
                 case AccountType.Business:
                     InterestRate = 0.01m;
                     OverdraftLimit = 500;
@@ -131,16 +137,20 @@ namespace CSharpBankingApp
             }
         }
 
-        public bool Deposit(decimal amount, string pin)
+        
+        public bool Deposit(decimal amount, string? pinForValidation = null)
         {
-            if (!ValidatePin(pin) || amount <= 0)
+            if (amount <= 0) return false;
+
+            // Vallidate given pin
+            if (pinForValidation != null && !ValidatePin(pinForValidation))
                 return false;
 
             Balance += amount;
             Transactions.Add(new Transaction(
-                TransactionType.Deposit, 
-                amount, 
-                DateTime.Now, 
+                TransactionType.Deposit,
+                amount,
+                DateTime.Now,
                 $"Deposit of {FormatZAR(amount)}"));
             return true;
         }
@@ -150,37 +160,46 @@ namespace CSharpBankingApp
             if (!ValidatePin(pin) || amount <= 0)
                 return false;
 
+            // Overdraft check
             if (Balance - amount < -OverdraftLimit)
                 return false;
 
+            // Minimum balance rule (only applies if staying >=0 but below min)
             if (Balance - amount < MinimumBalance && Balance - amount >= 0)
                 return false;
 
             Balance -= amount;
             Transactions.Add(new Transaction(
-                TransactionType.Withdrawal, 
-                amount, 
-                DateTime.Now, 
+                TransactionType.Withdrawal,
+                amount,
+                DateTime.Now,
                 $"Withdrawal of {FormatZAR(amount)}"));
             return true;
         }
 
-        public decimal CalculateInterest() => 
+        public decimal CalculateInterest() =>
             Balance <= 0 ? 0 : Balance * (InterestRate / 12);
-        
+
+        // Public: requires PIN
         public bool ApplyMonthlyInterest(string pin)
         {
             if (!ValidatePin(pin))
                 return false;
-                
+
+            return ApplyMonthlyInterestInternal();
+        }
+
+        // Internal/system use: no PIN required
+        internal bool ApplyMonthlyInterestInternal()
+        {
             decimal interestAmount = CalculateInterest();
             if (interestAmount > 0)
             {
                 Balance += interestAmount;
                 Transactions.Add(new Transaction(
-                    TransactionType.Interest, 
-                    interestAmount, 
-                    DateTime.Now, 
+                    TransactionType.Interest,
+                    interestAmount,
+                    DateTime.Now,
                     $"Interest payment of {FormatZAR(interestAmount)}"));
                 return true;
             }
@@ -190,16 +209,16 @@ namespace CSharpBankingApp
         public List<Transaction> GetTransactionHistory(DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = Transactions.AsQueryable();
-            
+
             if (startDate.HasValue)
                 query = query.Where(t => t.Timestamp >= startDate.Value);
-                
+
             if (endDate.HasValue)
                 query = query.Where(t => t.Timestamp <= endDate.Value);
-                
+
             return query.OrderByDescending(t => t.Timestamp).ToList();
         }
-        
+
         public string GetAccountSummary()
         {
             return $"Account ID: {Id}\n" +

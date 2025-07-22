@@ -1,5 +1,15 @@
+/home/basetsana/CSharpBankingApp/bin/Debug/net8.0/CSharpBankingApp
+/home/basetsana/CSharpBankingApp/bin/Debug/net8.0/CSharpBankingApp.deps.json
+/home/basetsana/CSharpBankingApp/bin/Debug/net8.0/CSharpBankingApp.runtimeconfig.json
+/home/basetsana/CSharpBankingApp/bin/Debug/net8.0/CSharpBankingApp.dll
+/home/basetsana/CSharpBankingApp/bin/Debug/net8.0/CSharpBankingApp.pdb
 /home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.GeneratedMSBuildEditorConfig.editorconfig
 /home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.AssemblyInfoInputs.cache
 /home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.AssemblyInfo.cs
 /home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.csproj.CoreCompileInputs.cache
 /home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.sourcelink.json
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.dll
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/refint/CSharpBankingApp.dll
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.pdb
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/CSharpBankingApp.genruntimeconfig.cache
+/home/basetsana/CSharpBankingApp/obj/Debug/net8.0/ref/CSharpBankingApp.dll
