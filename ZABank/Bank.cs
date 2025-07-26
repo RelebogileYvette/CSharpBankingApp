@@ -15,7 +15,7 @@ namespace CSharpBankingApp
         private readonly string _dataFilePath;
         private readonly string _backupDirectory;
         private Timer _autoSaveTimer;
-        
+
         private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -27,10 +27,10 @@ namespace CSharpBankingApp
             _dataFilePath = dataFilePath;
             _backupDirectory = backupDirectory;
             _accounts = new List<Account>();
-            
+
             if (!Directory.Exists(_backupDirectory))
                 Directory.CreateDirectory(_backupDirectory);
-            
+
             LoadAccounts();
             _autoSaveTimer = new Timer(AutoSave, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
         }
@@ -40,13 +40,13 @@ namespace CSharpBankingApp
             try
             {
                 var account = new Account(name, pin, type);
-                
+
                 lock (_lockObject)
                 {
                     _accounts.Add(account);
                     SaveAccounts();
                 }
-                
+
                 return account;
             }
             catch (ArgumentException ex)
@@ -76,6 +76,7 @@ namespace CSharpBankingApp
         {
             lock (_lockObject)
             {
+                // Return a copy so caller can’t mutate internal state
                 return _accounts.ToList();
             }
         }
@@ -85,30 +86,34 @@ namespace CSharpBankingApp
             var account = GetAccount(accountId);
             return account?.ValidatePin(pin) ?? false;
         }
-        
+
         public bool ChangePin(string accountId, string currentPin, string newPin)
         {
             var account = GetAccount(accountId);
             if (account == null)
                 return false;
-            
+
             bool success = account.ChangePin(currentPin, newPin);
             if (success)
                 SaveAccounts();
-            
+
             return success;
         }
-        
+
+        // User-initiated deposit: we validate PIN here, then call account.Deposit without PIN enforcement
         public bool Deposit(string accountId, decimal amount, string pin)
         {
             var account = GetAccount(accountId);
             if (account == null)
                 return false;
-            
-            bool success = account.Deposit(amount, pin);
+
+            if (!account.ValidatePin(pin))
+                return false;
+
+            bool success = account.Deposit(amount); // bypass pin
             if (success)
                 SaveAccounts();
-            
+
             return success;
         }
 
@@ -117,63 +122,82 @@ namespace CSharpBankingApp
             var account = GetAccount(accountId);
             if (account == null)
                 return false;
-            
+
             bool success = account.Withdraw(amount, pin);
             if (success)
                 SaveAccounts();
-            
+
             return success;
         }
 
-        public bool Transfer(string fromAccountId, string toAccountId, decimal amount, string pin)
+        // Transfer: require sender PIN only
+        public bool Transfer(string fromAccountId, string toAccountId, decimal amount, string fromPin)
         {
+            if (fromAccountId == toAccountId) return false;
+
             var fromAccount = GetAccount(fromAccountId);
             var toAccount = GetAccount(toAccountId);
-            
+
             if (fromAccount == null || toAccount == null)
                 return false;
-            
-            if (!fromAccount.Withdraw(amount, pin))
+
+            // Attempt debit
+            if (!fromAccount.Withdraw(amount, fromPin))
                 return false;
-            
-            if (!toAccount.Deposit(amount, pin))
+
+            // Credit to recipient 
+            if (!toAccount.Deposit(amount))
             {
-                fromAccount.Deposit(amount, pin);
+                // rollback
+                fromAccount.Deposit(amount);
                 return false;
             }
-            
+
+            // Add transfer-specific transaction entries (E.G: we already logged Withdrawal & Deposit)
+            fromAccount.Transactions.Add(new Transaction(
+                TransactionType.TransferOut,
+                amount,
+                DateTime.Now,
+                $"Transfer to {toAccount.Name} ({toAccount.Id.Substring(0, 6)}...)"));
+
+            toAccount.Transactions.Add(new Transaction(
+                TransactionType.TransferIn,
+                amount,
+                DateTime.Now,
+                $"Transfer from {fromAccount.Name} ({fromAccount.Id.Substring(0, 6)}...)"));
+
             SaveAccounts();
             return true;
         }
-        
+
         public bool ConvertAccountType(string accountId, AccountType newType, string pin)
         {
             var account = GetAccount(accountId);
             if (account == null)
                 return false;
-            
+
             bool success = account.ConvertAccountType(newType, pin);
             if (success)
                 SaveAccounts();
-            
+
             return success;
         }
-        
+
+        // System interest application (e.g., month-end batch)
         public void ApplyInterestToAllAccounts()
         {
             lock (_lockObject)
             {
                 bool anyInterestApplied = false;
-                
+
                 foreach (var account in _accounts)
                 {
-                    if (account.CalculateInterest() > 0)
+                    if (account.ApplyMonthlyInterestInternal())
                     {
-                        account.ApplyMonthlyInterest("0000");
                         anyInterestApplied = true;
                     }
                 }
-                
+
                 if (anyInterestApplied)
                     SaveAccounts();
             }
@@ -218,7 +242,7 @@ namespace CSharpBankingApp
                 Console.WriteLine($"Error saving accounts: {ex.Message}");
             }
         }
-        
+
         private void AutoSave(object? state)
         {
             try
@@ -238,13 +262,13 @@ namespace CSharpBankingApp
             {
                 string backupFileName = $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.json";
                 string backupPath = Path.Combine(_backupDirectory, backupFileName);
-                
+
                 lock (_lockObject)
                 {
                     string json = JsonSerializer.Serialize(_accounts, _jsonOptions);
                     File.WriteAllText(backupPath, json);
                 }
-                
+
                 CleanupOldBackups();
             }
             catch (Exception ex)
@@ -252,7 +276,7 @@ namespace CSharpBankingApp
                 Console.WriteLine($"Error creating backup: {ex.Message}");
             }
         }
-        
+
         private void CleanupOldBackups()
         {
             try
@@ -261,7 +285,7 @@ namespace CSharpBankingApp
                     .OrderByDescending(f => File.GetLastWriteTime(f))
                     .Skip(10)
                     .ToList();
-                
+
                 foreach (var file in backupFiles)
                 {
                     File.Delete(file);
@@ -272,7 +296,7 @@ namespace CSharpBankingApp
                 Console.WriteLine($"Error cleaning up old backups: {ex.Message}");
             }
         }
-        
+
         public List<string> GetAvailableBackups()
         {
             try
@@ -288,7 +312,7 @@ namespace CSharpBankingApp
                 return new List<string>();
             }
         }
-        
+
         public bool RestoreFromBackup(string backupFileName)
         {
             try
@@ -296,10 +320,10 @@ namespace CSharpBankingApp
                 string backupPath = Path.Combine(_backupDirectory, backupFileName);
                 if (!File.Exists(backupPath))
                     return false;
-                
+
                 string json = File.ReadAllText(backupPath);
                 var accounts = JsonSerializer.Deserialize<List<Account>>(json, _jsonOptions);
-                
+
                 if (accounts != null)
                 {
                     lock (_lockObject)
@@ -317,7 +341,7 @@ namespace CSharpBankingApp
                 return false;
             }
         }
-        
+
         private bool TryLoadFromBackup()
         {
             try
@@ -334,7 +358,7 @@ namespace CSharpBankingApp
                 return false;
             }
         }
-        
+
         public void Dispose()
         {
             _autoSaveTimer?.Dispose();

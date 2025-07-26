@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CSharpBankingApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3c0cdbd30b1a35b50240e3ce25c5f113c8212f9c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d1954202e46751382e3a976bd98dfdd0b046c470")]
 [assembly: System.Reflection.AssemblyProductAttribute("CSharpBankingApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CSharpBankingApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
