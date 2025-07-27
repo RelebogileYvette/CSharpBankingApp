@@ -47,11 +47,17 @@ It simulates a banking system where users can create accounts, perform transacti
 ---
 
 ## How to run the project
-- **Run**
-  ```bash
-  dotnet run
+- **dotnet run**
 
 ---
+
+## Running Tests
+
+- **cd ZABankTest**
+
+- **Run tests:**
+  ```bash
+  dotnet test
 
 ## License
 

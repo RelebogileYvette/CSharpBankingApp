@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZABankTest")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+650ef27d8c33e93a5d2c6019e4f8a84b09b193ae")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7de4fd314b356937b5c3cd2d5915de77c3c7e672")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZABankTest")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZABankTest")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
